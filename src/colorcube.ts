@@ -2,6 +2,27 @@ import * as THREE from 'THREE'
 
 (window as any).t = THREE
 
+/// cube ///
+let black = [0, 0, 0]
+let red = [1, 0, 0]
+let green = [0, 1, 0]
+let blue = [0, 0, 1]
+let cyan = [0, 1, 1]
+let magenta = [1, 0, 1]
+let yellow = [1, 1, 0]
+let white = [1, 1, 1]
+
+let cubeVertexToFaceVertexAndColorMap: Record<number, [[number, number, number], number[], string]> = {
+    [0]: [[5, 10, 16], white, 'white'],
+    [1]: [[4, 8, 21], cyan, 'cyan'],
+    [2]: [[0, 11, 17], magenta, 'magenta'],
+    [3]: [[7, 12, 18], yellow, 'yellow'],
+    [4]: [[2, 13, 19], red, 'red'],
+    [5]: [[6, 14, 23], green, 'green'],
+    [6]: [[1, 9, 20], blue, 'blue'],
+    [7]: [[3, 15, 22], black, 'black'],
+}
+
 let scaleOneVectorCoordinate = (baseVector: THREE.Vector3, coordinateName: 'x' | 'y' | 'z', axisLevel: number) => {
     let vector = baseVector.clone()
     vector[coordinateName] *= axisLevel
@@ -128,26 +149,6 @@ export let createColorCube = () => {
     setCuttingLevel(0)
 
     /// cube ///
-    let black = [0, 0, 0]
-    let red = [1, 0, 0]
-    let green = [0, 1, 0]
-    let blue = [0, 0, 1]
-    let cyan = [0, 1, 1]
-    let magenta = [1, 0, 1]
-    let yellow = [1, 1, 0]
-    let white = [1, 1, 1]
-
-    let cubeVertexToFaceVertexAndColorMap = {
-        [0]: [[5, 10, 16], white],
-        [1]: [[4, 8, 21], cyan],
-        [2]: [[0, 11, 17], magenta],
-        [3]: [[7, 12, 18], yellow],
-        [4]: [[2, 13, 19], red],
-        [5]: [[6, 14, 23], green],
-        [6]: [[1, 9, 20], blue],
-        [7]: [[3, 15, 22], black],
-    }
-
     let faceVertexColorArray = new Array(24)
 
     Object.values(cubeVertexToFaceVertexAndColorMap).forEach(([[u, v, w], color]) => {

@@ -1,9 +1,45 @@
 import * as THREE from 'THREE'
 import { createColorCube } from './colorcube'
+import * as packageJson from '../package.json'
+import { githubCornerHTML } from './lib/githubCorner'
+import { h } from './lib/hyper'
+import { cubeCornerSelector } from './gui/gui'
 
 type TTT<TX> = [TX, TX, TX]
 
+let clamp = (value: number, lower: number, upper: number) => {
+    return Math.max(Math.min(value, upper), lower)
+}
+
 export let main = async () => {
+    document.body.appendChild(h("div", { innerHTML: githubCornerHTML(packageJson.repository) }))
+
+    let colorNameArray = ["white", "cyan", "magenta", "yellow", "red", "green", "blue", "black"]
+    let colorNumberArray = [3, 5, 0, 6, 2, 7, 1, 4]
+    let select = (n: number) => { corner = eightCornerArray[n] }
+    let selector = cubeCornerSelector({ select, colorNameArray, colorNumberArray })
+    let topleft = h("div", { className: "top-left-corner frame" }, [selector])
+    document.body.appendChild(topleft)
+
+    let notification = h("p", { innerHTML: "<b>Click and Drag</b> to rotate the cube <b>Scroll</b> to change the cut level" })
+    notification.style.textAlign = "center"
+    notification.style.padding = "55px 20px"
+
+    let notificationBox = h("div", {}, [notification])
+    notificationBox.style.width = "300px"
+    notificationBox.style.height = "150px"
+    notificationBox.style.backgroundColor = "black"
+    notificationBox.style.margin = "20% auto"
+    document.addEventListener("mousedown", (ev) => {
+        ev.preventDefault()
+        ev.stopImmediatePropagation()
+        notificationOverlay.style.display = "none"
+    })
+
+    let notificationOverlay = h("div", { className: "overlay" }, [notificationBox])
+    document.body.appendChild(notificationOverlay)
+
+    // THREE
     let scene = new THREE.Scene()
     let camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 0.1, 1000)
 
@@ -43,23 +79,22 @@ export let main = async () => {
         return [((k & 4) >> 1) - 1, (k & 2) - 1, ((k & 1) << 1) - 1]
     })
 
-    let last_occurence = 0
+    let level = -1
+    let levelGoal = 0.96
+    let corner = eightCornerArray[7]
     let render = () => {
-        let theta = Date.now() / 1000
-        let occurence = Math.floor((theta / Math.PI + 1) / 2)
-        let level = Math.cos(theta)
-
-        if (occurence > last_occurence) {
-            last_occurence = occurence
-            let corner = eightCornerArray[Math.floor(Math.random() * 8)]
-            console.log("corner", ...corner)
-            cubeObject.setCuttingDirection(...corner)
-        }
+        cubeObject.setCuttingDirection(...corner)
         cubeObject.setCuttingLevel(level)
         renderer.render(scene, camera)
-
+        level = clamp(level + clamp(levelGoal - level, -0.03, 0.03), -1, 1)
         requestAnimationFrame(render)
     }
-
     render()
+
+    /* wheel */
+    document.addEventListener('wheel', (ev) => {
+        notificationOverlay.style.display = "none"
+        ev.preventDefault()
+        levelGoal = clamp(level + clamp(ev.deltaY * 0.002, -0.166, 0.166), -1, 1)
+    }, true)
 }
