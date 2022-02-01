@@ -1,4 +1,4 @@
-import * as THREE from 'THREE'
+import * as THREE from 'three'
 import { createColorCube } from './colorcube'
 import * as packageJson from '../package.json'
 import { githubCornerHTML } from './lib/githubCorner'
@@ -15,7 +15,7 @@ export let main = async () => {
     document.body.appendChild(h("div", { innerHTML: githubCornerHTML(packageJson.repository) }))
 
     let colorNameArray = ["white", "cyan", "magenta", "yellow", "red", "green", "blue", "black"]
-    let colorNumberArray = [3, 5, 0, 6, 2, 7, 1, 4]
+    let colorNumberArray = [3, 2, 7, 1, 5, 0, 6, 4]
     let select = (n: number) => { corner = eightCornerArray[n] }
     let selector = cubeCornerSelector({ select, colorNameArray, colorNumberArray })
     let topleft = h("div", { className: "top-left-corner frame" }, [selector])

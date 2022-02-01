@@ -8,5 +8,5 @@ A cube color picker. It has varying intensities of Red, Green and Blue colors on
 
 ```sh
 yarn
-yarn parcel src/page.html
+yarn parcel src/colorcube.html
 ```
