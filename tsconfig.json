@@ -9,7 +9,7 @@
     // "lib": [],
     // "allowJs": true,
     // "checkJs": true,
-    // "jsx": "preserve",
+    "jsx": "preserve",
     // "declaration": true,
     // "declarationMap": true,
     // "sourceMap": true,

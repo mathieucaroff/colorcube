@@ -8,11 +8,16 @@
     "build": "parcel build src/colorcube.html --public-url colorcube.d"
   },
   "devDependencies": {
+    "@types/react": "^17.0.39",
+    "@types/react-dom": "^17.0.11",
     "@types/three": "^0.131.0",
     "parcel": "^2.2.1",
     "typescript": "^4.5.5"
   },
   "dependencies": {
+    "antd": "^4.18.5",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2",
     "three": "^0.132.2"
   }
 }
