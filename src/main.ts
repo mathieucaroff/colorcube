@@ -23,10 +23,23 @@ export let main = async () => {
     })
     let corner = eightCornerArray[7]
 
+    // cube cutting level
+    let level = -1
+    let levelGoal = 0.96
+
     let colorNameArray = ["white", "cyan", "magenta", "yellow", "red", "green", "blue", "black"]
+    let colorValueArray = "#FFFFFF #00FFFF #FF00FF #FFFF00 #FF0000 #00FF00 #0000FF #000000".split(
+        " ",
+    )
     let colorNumberArray = [3, 2, 7, 1, 5, 0, 6, 4]
     let selector: HTMLDivElement
     let currentCorner = 2
+
+    let updateLevelGoal = (value: number) => {
+        levelGoal = value
+        setCorner(currentCorner)
+    }
+
     let setCorner = (n: number) => {
         currentCorner = n
         if (selector) {
@@ -36,22 +49,26 @@ export let main = async () => {
         selector = CubeCornerSelector({
             setCorner,
             colorNameArray,
+            colorValueArray,
             currentCorner,
+            levelGoal,
+            updateLevelGoal,
         })
         topleft.appendChild(selector)
     }
     setCorner(colorNumberArray[1])
 
+    // notification
     let notification = h("p", {
-        innerHTML: "<b>Click and Drag</b> to rotate the cube <b>Scroll</b> to change the cut level",
+        innerHTML:
+            "<ul><li><b>Click and Drag</b> to rotate the cube <li><b>Scroll</b> to change the cut level</ul>",
     })
-    notification.style.textAlign = "center"
-    notification.style.padding = "55px 20px"
+    notification.style.padding = "25px 0px"
     notification.style.color = "white"
 
     let notificationBox = h("div", {}, [notification])
     notificationBox.style.width = "300px"
-    notificationBox.style.height = "150px"
+    notificationBox.style.height = "100px"
     notificationBox.style.backgroundColor = "black"
     notificationBox.style.margin = "20% auto"
     document.addEventListener("mousedown", (ev) => {
@@ -99,8 +116,7 @@ export let main = async () => {
         isDragging = false
     })
 
-    let level = -1
-    let levelGoal = 0.96
+    // render cube
     let render = () => {
         cubeObject.setCuttingDirection(...corner)
         cubeObject.setCuttingLevel(level)
@@ -117,6 +133,7 @@ export let main = async () => {
             notificationOverlay.style.display = "none"
             ev.preventDefault()
             levelGoal = clamp(level + clamp(-ev.deltaY * 0.002, -0.166, 0.166), -1, 1)
+            setCorner(currentCorner)
         },
         true,
     )
