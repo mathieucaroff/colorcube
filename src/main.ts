@@ -4,6 +4,8 @@ import * as packageJson from "../package.json"
 import { githubCornerHTML } from "./lib/githubCorner"
 import { h } from "./lib/hyper"
 import { CubeCornerSelector } from "./gui/gui"
+import React from "react"
+import ReactDOM from "react-dom"
 
 type TTT<TX> = [TX, TX, TX]
 
@@ -46,15 +48,17 @@ export let main = async () => {
             selector.remove()
         }
         corner = eightCornerArray[colorNumberArray[currentCorner]]
-        selector = CubeCornerSelector({
-            setCorner,
-            colorNameArray,
-            colorValueArray,
-            currentCorner,
-            levelGoal,
-            updateLevelGoal,
-        })
-        topleft.appendChild(selector)
+        ReactDOM.render(
+            React.createElement(CubeCornerSelector, {
+                setCorner,
+                colorNameArray,
+                colorValueArray,
+                currentCorner,
+                levelGoal,
+                updateLevelGoal,
+            }),
+            topleft,
+        )
     }
     setCorner(colorNumberArray[1])
 

@@ -14,9 +14,7 @@ export interface CubeCornerSelectorProp {
 }
 
 export let CubeCornerSelector = (prop: CubeCornerSelectorProp) => {
-    let div = h("div")
-
-    ReactDOM.render(
+    return (
         <div>
             <h3 style={{ padding: "8px", color: "white" }}>Cutting corner</h3>
             <div style={{ float: "left" }}>
@@ -59,16 +57,13 @@ export let CubeCornerSelector = (prop: CubeCornerSelectorProp) => {
                 <Slider
                     vertical
                     max={100}
-                    value={100 * prop.levelGoal}
-                    min={-100}
+                    value={50 * (prop.levelGoal + 1)}
+                    min={0}
                     onChange={(value) => {
-                        prop.updateLevelGoal(value / 100)
+                        prop.updateLevelGoal(value / 50 - 1)
                     }}
                 ></Slider>
             </div>
-        </div>,
-        div,
+        </div>
     )
-
-    return div
 }
