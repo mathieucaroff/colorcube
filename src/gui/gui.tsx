@@ -1,7 +1,5 @@
 import { Radio, Slider, Space } from "antd"
 import React from "react"
-import ReactDOM from "react-dom"
-import { h } from "../lib/hyper"
 import "antd/dist/antd.css"
 
 export interface CubeCornerSelectorProp {
@@ -27,19 +25,19 @@ export let CubeCornerSelector = (prop: CubeCornerSelectorProp) => {
                         {prop.colorNameArray.map((_, k) => {
                             let color = prop.colorNameArray[k]
                             let colorValue = prop.colorValueArray[k]
-                            let disabled = k == prop.currentCorner
+                            let selected = k == prop.currentCorner
                             return (
                                 <Radio.Button
                                     key={k}
                                     style={{
-                                        backgroundColor: disabled ? "grey" : colorValue,
-                                        color:
-                                            [0, 0, 0, 0, 1, 0, 1, 1][k] && !disabled
-                                                ? "white"
-                                                : "black",
+                                        backgroundColor: "black",
+                                        color: "white",
+                                        borderColor: colorValue,
+                                        borderWidth: selected ? "3px" : "1px",
+                                        fontWeight: selected ? "bold" : "normal",
                                     }}
                                     value={k}
-                                    disabled={disabled}
+                                    disabled={selected}
                                 >
                                     {color}
                                 </Radio.Button>

@@ -22,20 +22,20 @@ export let main = async () => {
 
     let eightCornerArray = Array.from({ length: 8 }, (_, k): TTT<number> => {
         return [((k & 4) >> 1) - 1, (k & 2) - 1, ((k & 1) << 1) - 1]
-    })
-    let corner = eightCornerArray[7]
+    }).reverse()
+    let corner = eightCornerArray[0]
 
     // cube cutting level
     let level = -1
-    let levelGoal = 0.96
+    let levelGoal = 0.8
 
     let colorNameArray = ["white", "cyan", "magenta", "yellow", "red", "green", "blue", "black"]
-    let colorValueArray = "#FFFFFF #00FFFF #FF00FF #FFFF00 #FF0000 #00FF00 #0000FF #000000".split(
+    let colorValueArray = "#FFFFFF #00FFFF #FF00FF #FFFF00 #FF0000 #00FF00 #7777FF #000000".split(
         " ",
     )
     let colorNumberArray = [3, 2, 7, 1, 5, 0, 6, 4]
     let selector: HTMLDivElement
-    let currentCorner = 2
+    let currentCorner = 0
 
     let updateLevelGoal = (value: number) => {
         levelGoal = value
@@ -60,7 +60,7 @@ export let main = async () => {
             topleft,
         )
     }
-    setCorner(colorNumberArray[1])
+    setCorner(0)
 
     // notification
     let notification = h("p", {
@@ -73,7 +73,8 @@ export let main = async () => {
     let notificationBox = h("div", {}, [notification])
     notificationBox.style.width = "300px"
     notificationBox.style.height = "100px"
-    notificationBox.style.backgroundColor = "black"
+    notificationBox.style.backgroundColor = "#222"
+    notificationBox.style.border = "5px solid #888"
     notificationBox.style.margin = "20% auto"
     document.addEventListener("mousedown", (ev) => {
         ev.preventDefault()
@@ -94,7 +95,7 @@ export let main = async () => {
     document.body.appendChild(renderer.domElement)
 
     let cubeObject = createColorCube()
-    cubeObject.applyXYRotation(Math.PI / 12, (2.5 * Math.PI) / 6)
+    cubeObject.applyXYRotation(Math.PI / 12, Math.PI / 6)
     scene.add(cubeObject.cubeGroup)
     camera.position.z = 5
 

@@ -5,7 +5,8 @@
   "repository": "https://github.com/mathieucaroff/colorcube",
   "license": "NTP",
   "scripts": {
-    "build": "parcel build src/colorcube.html --public-url colorcube.d"
+    "build": "parcel build src/colorcube.html --public-url colorcube.d",
+    "serve": "parcel serve src/colorcube.html"
   },
   "devDependencies": {
     "@types/react": "^17.0.39",
