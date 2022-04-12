@@ -13,6 +13,19 @@ let clamp = (value: number, lower: number, upper: number) => {
     return Math.max(Math.min(value, upper), lower)
 }
 
+type DesktopOrMobile = "desktop" | "mobile"
+
+/**
+ *
+ * @param userAgent the user agent of the navigator
+ * @returns true when the userAgent corresponds to that of a mobile
+ */
+export function getDesktopOrMobile(userAgent: string): DesktopOrMobile {
+    return userAgent.match(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i)
+        ? "mobile"
+        : "desktop"
+}
+
 export let main = async () => {
     let githubCornerDiv = h("div", { innerHTML: githubCornerHTML(packageJson.repository) })
     document.body.appendChild(githubCornerDiv)
@@ -71,14 +84,15 @@ export let main = async () => {
     notification.style.color = "white"
 
     let notificationBox = h("div", {}, [notification])
-    notificationBox.style.width = "300px"
+    notificationBox.style.width = "400px"
     notificationBox.style.height = "100px"
     notificationBox.style.backgroundColor = "#222"
     notificationBox.style.border = "5px solid #888"
     notificationBox.style.margin = "20% auto"
-    document.addEventListener("mousedown", (ev) => {
-        ev.preventDefault()
-        ev.stopImmediatePropagation()
+    document.addEventListener("mousedown", () => {
+        notificationOverlay.style.display = "none"
+    })
+    document.addEventListener("touchstart", () => {
         notificationOverlay.style.display = "none"
     })
 
@@ -87,10 +101,14 @@ export let main = async () => {
 
     // THREE
     let scene = new THREE.Scene()
-    let camera = new THREE.PerspectiveCamera(30, window.innerWidth / window.innerHeight, 0.1, 1000)
+    let isMobile = getDesktopOrMobile(navigator.userAgent) === "mobile"
+    isMobile = false
+    let canvasWidth = isMobile ? window.outerWidth : window.innerWidth
+    let canvasHeight = Math.min(isMobile ? window.outerHeight : window.innerHeight, canvasWidth)
+    let camera = new THREE.PerspectiveCamera(30, canvasWidth / canvasHeight, 0.1, 1000)
 
     let renderer = new THREE.WebGLRenderer()
-    renderer.setSize(window.innerWidth, window.innerHeight)
+    renderer.setSize(canvasWidth, canvasHeight)
     renderer.localClippingEnabled = true
     document.body.appendChild(renderer.domElement)
 
@@ -101,25 +119,48 @@ export let main = async () => {
 
     // dragging and rotation
     let isDragging = false
-    let previousMousePosition = { y: 0, x: 0 }
-    renderer.domElement.addEventListener("mousedown", () => {
+    let lastPosition = { y: 0, x: 0 }
+    let lastTouchPosition = { y: 0, x: 0 }
+    function handleStart(x: number, y: number) {
         isDragging = true
-    })
-    renderer.domElement.addEventListener("mousemove", (e) => {
+        lastPosition = { x, y }
+        lastTouchPosition = { x, y }
+    }
+
+    function handleMove(x: number, y: number) {
         if (isDragging) {
-            cubeObject.applyXYRotation(
-                (e.offsetY - previousMousePosition.y) * 0.006,
-                (e.offsetX - previousMousePosition.x) * 0.006,
-            )
+            cubeObject.applyXYRotation((y - lastPosition.y) * 0.006, (x - lastPosition.x) * 0.006)
         }
-        previousMousePosition = {
-            x: e.offsetX,
-            y: e.offsetY,
-        }
-    })
-    document.addEventListener("mouseup", () => {
+        lastPosition = { x, y }
+    }
+
+    function handleEnd() {
         isDragging = false
+    }
+
+    let { documentElement } = document
+
+    documentElement.addEventListener("mousedown", (ev) => {
+        handleStart(ev.clientX, ev.clientY)
     })
+    documentElement.addEventListener("touchstart", (ev) => {
+        ev.preventDefault()
+        ev.stopImmediatePropagation()
+        let x = ev.touches[0].clientX
+        let y = ev.touches[0].clientY
+        handleStart(x, y)
+    })
+    documentElement.addEventListener("mousemove", (ev) => {
+        handleMove(ev.clientX, ev.clientY)
+    })
+    documentElement.addEventListener("touchmove", (ev) => {
+        let x = ev.touches[0].clientX
+        let y = ev.touches[0].clientY
+        handleMove(x, y)
+    })
+    document.addEventListener("mouseup", handleEnd)
+    document.addEventListener("touchend", handleEnd)
+    document.addEventListener("touchcancel", handleEnd)
 
     // render cube
     let render = () => {
