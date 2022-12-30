@@ -1,5 +1,5 @@
-import * as THREE from "three"
-;(window as any).t = THREE
+import * as three from "three"
+;(window as any).t = three
 
 /// cube ///
 let black = [0, 0, 0]
@@ -26,7 +26,7 @@ let cubeVertexToFaceVertexAndColorMap: Record<
 }
 
 let scaleOneVectorCoordinate = (
-  baseVector: THREE.Vector3,
+  baseVector: three.Vector3,
   coordinateName: "x" | "y" | "z",
   axisLevel: number,
 ) => {
@@ -36,12 +36,12 @@ let scaleOneVectorCoordinate = (
 }
 
 let setColorPolygonGeometry = (
-  vertexArray: THREE.Vector3[],
-  vertexColorArray: THREE.Color[],
-  geometry: THREE.BufferGeometry,
+  vertexArray: three.Vector3[],
+  vertexColorArray: three.Color[],
+  geometry: three.BufferGeometry,
 ) => {
   // vector average
-  let sum = new THREE.Vector3()
+  let sum = new three.Vector3()
   vertexArray.forEach((vector) => {
     sum.add(vector)
   })
@@ -71,8 +71,8 @@ let setColorPolygonGeometry = (
     colorArray.push(...color.toArray(), ...nextColor.toArray(), ...averageColor)
   })
 
-  geometry.setAttribute("position", new THREE.Float32BufferAttribute(positionArray, 3))
-  geometry.setAttribute("color", new THREE.Float32BufferAttribute(colorArray, 3))
+  geometry.setAttribute("position", new three.Float32BufferAttribute(positionArray, 3))
+  geometry.setAttribute("color", new three.Float32BufferAttribute(colorArray, 3))
 }
 
 /**
@@ -86,23 +86,23 @@ export let createColorCube = () => {
 
   /// plane ///
   const cornerDistance = 3 ** 0.5 / 2
-  let diagonalVector = new THREE.Vector3(0.5, -0.5, -0.5)
-  let cuttingPlane = new THREE.Plane(diagonalVector.clone().normalize())
+  let diagonalVector = new three.Vector3(0.5, -0.5, -0.5)
+  let cuttingPlane = new three.Plane(diagonalVector.clone().normalize())
 
-  let fillerMesh = new THREE.Mesh(
-    new THREE.BufferGeometry(),
-    new THREE.MeshBasicMaterial({ vertexColors: true, side: THREE.DoubleSide }),
+  let fillerMesh = new three.Mesh(
+    new three.BufferGeometry(),
+    new three.MeshBasicMaterial({ vertexColors: true, side: three.DoubleSide }),
   )
 
-  let cubeGroup = new THREE.Group()
+  let cubeGroup = new three.Group()
 
   // given the position of a vertex, compute the color associated to it
-  let getVertexColor = (u: THREE.Vector3): THREE.Color => {
+  let getVertexColor = (u: three.Vector3): three.Color => {
     let c = 0
     c += ((-u.x + 0.5) * 0xff) << 8 // G
     c += (u.y + 0.5) * 0xff // R
     c += ((u.z + 0.5) * 0xff) << 16 // B
-    return new THREE.Color(c)
+    return new three.Color(c)
   }
 
   let setCuttingDirection = (x: number, y: number, z: number) => {
@@ -115,7 +115,7 @@ export let createColorCube = () => {
     cuttingPlane.normal = diagonalVector
       .clone()
       .normalize()
-      .applyMatrix4(new THREE.Matrix4().makeRotationFromEuler(cubeGroup.rotation))
+      .applyMatrix4(new three.Matrix4().makeRotationFromEuler(cubeGroup.rotation))
   }
 
   setCuttingDirection(1, -1, -1) // white to black
@@ -123,7 +123,7 @@ export let createColorCube = () => {
   let setCuttingLevel = (cuttingLevel: number) => {
     cuttingPlane.constant = cornerDistance * cuttingLevel
 
-    let vertexArray: THREE.Vector3[]
+    let vertexArray: three.Vector3[]
     if (cuttingLevel < -1 || cuttingLevel > 1) {
       return
     } else if (-1 / 3 < cuttingLevel && cuttingLevel < 1 / 3) {
@@ -142,7 +142,7 @@ export let createColorCube = () => {
     } else {
       // Triangle
       let factor: number
-      let vector: THREE.Vector3
+      let vector: three.Vector3
       if (cuttingLevel < 0) {
         // // Triangle Bottom
         // level // [-1, -1/3]
@@ -179,23 +179,23 @@ export let createColorCube = () => {
   // flatten
   let colorBuffer = [].concat(...faceVertexColorArray)
 
-  let cubeGeometry = new THREE.BoxGeometry(1, 1, 1)
-  cubeGeometry.setAttribute("color", new THREE.Float32BufferAttribute(colorBuffer, 3))
-  let cubeMaterial = new THREE.MeshBasicMaterial({
+  let cubeGeometry = new three.BoxGeometry(1, 1, 1)
+  cubeGeometry.setAttribute("color", new three.Float32BufferAttribute(colorBuffer, 3))
+  let cubeMaterial = new three.MeshBasicMaterial({
     vertexColors: true,
     clippingPlanes: [cuttingPlane],
   })
-  let cube = new THREE.Mesh(cubeGeometry, cubeMaterial)
+  let cube = new three.Mesh(cubeGeometry, cubeMaterial)
 
   cubeGroup.add(cube)
   cubeGroup.add(fillerMesh)
 
-  let applyMatrix4 = (matrix: THREE.Matrix4) => {
+  let applyMatrix4 = (matrix: three.Matrix4) => {
     cubeGroup.applyMatrix4(matrix)
     cuttingPlane.applyMatrix4(matrix)
   }
   let applyXYRotation = (x: number, y: number) => {
-    applyMatrix4(new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(x, y)))
+    applyMatrix4(new three.Matrix4().makeRotationFromEuler(new three.Euler(x, y)))
   }
 
   return { cubeGroup, setCuttingLevel, setCuttingDirection, applyXYRotation }

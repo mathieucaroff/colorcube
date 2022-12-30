@@ -1,4 +1,4 @@
-import * as THREE from "three"
+import * as three from "three"
 import { createColorCube } from "./colorcube"
 import * as packageJson from "../package.json"
 import { githubCornerHTML } from "./lib/githubCorner"
@@ -97,15 +97,15 @@ export let main = async () => {
   let notificationOverlay = h("div", { className: "overlay" }, [notificationBox])
   document.body.appendChild(notificationOverlay)
 
-  // THREE
-  let scene = new THREE.Scene()
+  // three
+  let scene = new three.Scene()
   let isMobile = getDesktopOrMobile(navigator.userAgent) === "mobile"
   isMobile = false
   let canvasWidth = isMobile ? window.outerWidth : window.innerWidth
   let canvasHeight = Math.min(isMobile ? window.outerHeight : window.innerHeight, canvasWidth)
-  let camera = new THREE.PerspectiveCamera(30, canvasWidth / canvasHeight, 0.1, 1000)
+  let camera = new three.PerspectiveCamera(30, canvasWidth / canvasHeight, 0.1, 1000)
 
-  let renderer = new THREE.WebGLRenderer()
+  let renderer = new three.WebGLRenderer()
   renderer.setSize(canvasWidth, canvasHeight)
   renderer.localClippingEnabled = true
   document.body.appendChild(renderer.domElement)
