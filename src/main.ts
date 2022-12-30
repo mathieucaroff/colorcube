@@ -1,186 +1,267 @@
+// @ts-nocheck
 import * as THREE from "three"
-import { createColorCube } from "./colorcube"
-import * as packageJson from "../package.json"
-import { githubCornerHTML } from "./lib/githubCorner"
-import { h } from "./lib/hyper"
-import { CubeCornerSelector } from "./gui/gui"
-import React from "react"
-import ReactDOM from "react-dom"
 
-type TTT<TX> = [TX, TX, TX]
+import { GUI } from "lil-gui"
 
-let clamp = (value: number, lower: number, upper: number) => {
-    return Math.max(Math.min(value, upper), lower)
+import { OrbitControls } from "../node_modules/three/examples/jsm/controls/OrbitControls"
+import Stats from "../node_modules/three/examples/jsm/libs/stats.module.js"
+
+let camera, scene, renderer, object, stats
+let planes, planeObjects, planeHelpers
+let clock
+
+const params = {
+  animate: true,
+  planeX: {
+    constant: 0,
+    negated: false,
+    displayHelper: false,
+  },
+  planeY: {
+    constant: 0,
+    negated: false,
+    displayHelper: false,
+  },
+  planeZ: {
+    constant: 0,
+    negated: false,
+    displayHelper: false,
+  },
 }
 
-type DesktopOrMobile = "desktop" | "mobile"
+init()
+animate()
 
-/**
- *
- * @param userAgent the user agent of the navigator
- * @returns true when the userAgent corresponds to that of a mobile
- */
-export function getDesktopOrMobile(userAgent: string): DesktopOrMobile {
-    return userAgent.match(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i)
-        ? "mobile"
-        : "desktop"
+function createPlaneStencilGroup(geometry, plane, renderOrder) {
+  const group = new THREE.Group()
+  const baseMat = new THREE.MeshBasicMaterial()
+  baseMat.depthWrite = false
+  baseMat.depthTest = false
+  baseMat.colorWrite = false
+  baseMat.stencilWrite = true
+  baseMat.stencilFunc = THREE.AlwaysStencilFunc
+
+  // back faces
+  const mat0 = baseMat.clone()
+  mat0.side = THREE.BackSide
+  mat0.clippingPlanes = [plane]
+  mat0.stencilFail = THREE.IncrementWrapStencilOp
+  mat0.stencilZFail = THREE.IncrementWrapStencilOp
+  mat0.stencilZPass = THREE.IncrementWrapStencilOp
+
+  const mesh0 = new THREE.Mesh(geometry, mat0)
+  mesh0.renderOrder = renderOrder
+  group.add(mesh0)
+
+  // front faces
+  const mat1 = baseMat.clone()
+  mat1.side = THREE.FrontSide
+  mat1.clippingPlanes = [plane]
+  mat1.stencilFail = THREE.DecrementWrapStencilOp
+  mat1.stencilZFail = THREE.DecrementWrapStencilOp
+  mat1.stencilZPass = THREE.DecrementWrapStencilOp
+
+  const mesh1 = new THREE.Mesh(geometry, mat1)
+  mesh1.renderOrder = renderOrder
+
+  group.add(mesh1)
+
+  return group
 }
 
-export let main = async () => {
-    let githubCornerDiv = h("div", { innerHTML: githubCornerHTML(packageJson.repository) })
-    document.body.appendChild(githubCornerDiv)
+function init() {
+  clock = new THREE.Clock()
 
-    let topleft = h("div", { className: "top-left-corner frame" })
-    document.body.appendChild(topleft)
+  scene = new THREE.Scene()
 
-    let eightCornerArray = Array.from({ length: 8 }, (_, k): TTT<number> => {
-        return [((k & 4) >> 1) - 1, (k & 2) - 1, ((k & 1) << 1) - 1]
-    }).reverse()
-    let corner = eightCornerArray[0]
+  camera = new THREE.PerspectiveCamera(36, window.innerWidth / window.innerHeight, 1, 100)
+  camera.position.set(2, 2, 2)
 
-    // cube cutting level
-    let level = -1
-    let levelGoal = 0.8
+  scene.add(new THREE.AmbientLight(0xffffff, 0.5))
 
-    let colorNameArray = ["white", "cyan", "magenta", "yellow", "red", "green", "blue", "black"]
-    let colorValueArray = "#FFFFFF #00FFFF #FF00FF #FFFF00 #FF0000 #00FF00 #7777FF #000000".split(
-        " ",
+  const dirLight = new THREE.DirectionalLight(0xffffff, 1)
+  dirLight.position.set(5, 10, 7.5)
+  dirLight.castShadow = true
+  dirLight.shadow.camera.right = 2
+  dirLight.shadow.camera.left = -2
+  dirLight.shadow.camera.top = 2
+  dirLight.shadow.camera.bottom = -2
+
+  dirLight.shadow.mapSize.width = 1024
+  dirLight.shadow.mapSize.height = 1024
+  scene.add(dirLight)
+
+  planes = [
+    new THREE.Plane(new THREE.Vector3(-1, 0, 0), 0),
+    new THREE.Plane(new THREE.Vector3(0, -1, 0), 0),
+    new THREE.Plane(new THREE.Vector3(0, 0, -1), 0),
+  ]
+
+  planeHelpers = planes.map((p) => new THREE.PlaneHelper(p, 2, 0xffffff))
+  planeHelpers.forEach((ph) => {
+    ph.visible = false
+    scene.add(ph)
+  })
+
+  const geometry = new THREE.TorusKnotGeometry(0.4, 0.15, 220, 60)
+  object = new THREE.Group()
+  scene.add(object)
+
+  // Set up clip plane rendering
+  planeObjects = []
+  const planeGeom = new THREE.PlaneGeometry(4, 4)
+
+  for (let i = 0; i < 3; i++) {
+    const poGroup = new THREE.Group()
+    const plane = planes[i]
+    const stencilGroup = createPlaneStencilGroup(geometry, plane, i + 1)
+
+    // plane is clipped by the other clipping planes
+    const planeMat = new THREE.MeshStandardMaterial({
+      color: 0xe91e63,
+      metalness: 0.1,
+      roughness: 0.75,
+      clippingPlanes: planes.filter((p) => p !== plane),
+
+      stencilWrite: true,
+      stencilRef: 0,
+      stencilFunc: THREE.NotEqualStencilFunc,
+      stencilFail: THREE.ReplaceStencilOp,
+      stencilZFail: THREE.ReplaceStencilOp,
+      stencilZPass: THREE.ReplaceStencilOp,
+    })
+    const po = new THREE.Mesh(planeGeom, planeMat)
+    po.onAfterRender = function (renderer) {
+      renderer.clearStencil()
+    }
+
+    po.renderOrder = i + 1.1
+
+    object.add(stencilGroup)
+    poGroup.add(po)
+    planeObjects.push(po)
+    scene.add(poGroup)
+  }
+
+  const material = new THREE.MeshStandardMaterial({
+    color: 0xffc107,
+    metalness: 0.1,
+    roughness: 0.75,
+    clippingPlanes: planes,
+    clipShadows: true,
+    shadowSide: THREE.DoubleSide,
+  })
+
+  // add the color
+  const clippedColorFront = new THREE.Mesh(geometry, material)
+  clippedColorFront.castShadow = true
+  clippedColorFront.renderOrder = 6
+  object.add(clippedColorFront)
+
+  const ground = new THREE.Mesh(
+    new THREE.PlaneGeometry(9, 9, 1, 1),
+    new THREE.ShadowMaterial({ color: 0x000000, opacity: 0.25, side: THREE.DoubleSide }),
+  )
+
+  ground.rotation.x = -Math.PI / 2 // rotates X/Y to X/Z
+  ground.position.y = -1
+  ground.receiveShadow = true
+  scene.add(ground)
+
+  // Stats
+  stats = new Stats()
+  document.body.appendChild(stats.dom)
+
+  // Renderer
+  renderer = new THREE.WebGLRenderer({ antialias: true })
+  renderer.shadowMap.enabled = true
+  renderer.setPixelRatio(window.devicePixelRatio)
+  renderer.setSize(window.innerWidth, window.innerHeight)
+  renderer.setClearColor(0x263238)
+  window.addEventListener("resize", onWindowResize)
+  document.body.appendChild(renderer.domElement)
+
+  renderer.localClippingEnabled = true
+
+  // Controls
+  const controls = new OrbitControls(camera, renderer.domElement)
+  controls.minDistance = 2
+  controls.maxDistance = 20
+  controls.update()
+
+  // GUI
+  const gui = new GUI()
+  gui.add(params, "animate")
+
+  const planeX = gui.addFolder("planeX")
+  planeX.add(params.planeX, "displayHelper").onChange((v) => (planeHelpers[0].visible = v))
+  planeX
+    .add(params.planeX, "constant")
+    .min(-1)
+    .max(1)
+    .onChange((d) => (planes[0].constant = d))
+  planeX.add(params.planeX, "negated").onChange(() => {
+    planes[0].negate()
+    params.planeX.constant = planes[0].constant
+  })
+  planeX.open()
+
+  const planeY = gui.addFolder("planeY")
+  planeY.add(params.planeY, "displayHelper").onChange((v) => (planeHelpers[1].visible = v))
+  planeY
+    .add(params.planeY, "constant")
+    .min(-1)
+    .max(1)
+    .onChange((d) => (planes[1].constant = d))
+  planeY.add(params.planeY, "negated").onChange(() => {
+    planes[1].negate()
+    params.planeY.constant = planes[1].constant
+  })
+  planeY.open()
+
+  const planeZ = gui.addFolder("planeZ")
+  planeZ.add(params.planeZ, "displayHelper").onChange((v) => (planeHelpers[2].visible = v))
+  planeZ
+    .add(params.planeZ, "constant")
+    .min(-1)
+    .max(1)
+    .onChange((d) => (planes[2].constant = d))
+  planeZ.add(params.planeZ, "negated").onChange(() => {
+    planes[2].negate()
+    params.planeZ.constant = planes[2].constant
+  })
+  planeZ.open()
+}
+
+function onWindowResize() {
+  camera.aspect = window.innerWidth / window.innerHeight
+  camera.updateProjectionMatrix()
+
+  renderer.setSize(window.innerWidth, window.innerHeight)
+}
+
+function animate() {
+  const delta = clock.getDelta()
+
+  requestAnimationFrame(animate)
+
+  if (params.animate) {
+    object.rotation.x += delta * 0.5
+    object.rotation.y += delta * 0.2
+  }
+
+  for (let i = 0; i < planeObjects.length; i++) {
+    const plane = planes[i]
+    const po = planeObjects[i]
+    plane.coplanarPoint(po.position)
+    po.lookAt(
+      po.position.x - plane.normal.x,
+      po.position.y - plane.normal.y,
+      po.position.z - plane.normal.z,
     )
-    let colorNumberArray = [3, 2, 7, 1, 5, 0, 6, 4]
-    let selector: HTMLDivElement
-    let currentCorner = 0
+  }
 
-    let updateLevelGoal = (value: number) => {
-        levelGoal = value
-        setCorner(currentCorner)
-    }
-
-    let setCorner = (n: number) => {
-        currentCorner = n
-        if (selector) {
-            selector.remove()
-        }
-        corner = eightCornerArray[colorNumberArray[currentCorner]]
-        ReactDOM.render(
-            React.createElement(CubeCornerSelector, {
-                setCorner,
-                colorNameArray,
-                colorValueArray,
-                currentCorner,
-                levelGoal,
-                updateLevelGoal,
-            }),
-            topleft,
-        )
-    }
-    setCorner(0)
-
-    // notification
-    let notification = h("p", {
-        innerHTML:
-            "<ul><li><b>Click and Drag</b> to rotate the cube <li><b>Scroll</b> to change the cut level</ul>",
-    })
-    notification.style.padding = "25px 0px"
-    notification.style.color = "white"
-
-    let notificationBox = h("div", {}, [notification])
-    notificationBox.style.width = "400px"
-    notificationBox.style.height = "100px"
-    notificationBox.style.backgroundColor = "#222"
-    notificationBox.style.border = "5px solid #888"
-    notificationBox.style.margin = "20% auto"
-    document.addEventListener("mousedown", () => {
-        notificationOverlay.style.display = "none"
-    })
-    document.addEventListener("touchstart", () => {
-        notificationOverlay.style.display = "none"
-    })
-
-    let notificationOverlay = h("div", { className: "overlay" }, [notificationBox])
-    document.body.appendChild(notificationOverlay)
-
-    // THREE
-    let scene = new THREE.Scene()
-    let isMobile = getDesktopOrMobile(navigator.userAgent) === "mobile"
-    isMobile = false
-    let canvasWidth = isMobile ? window.outerWidth : window.innerWidth
-    let canvasHeight = Math.min(isMobile ? window.outerHeight : window.innerHeight, canvasWidth)
-    let camera = new THREE.PerspectiveCamera(30, canvasWidth / canvasHeight, 0.1, 1000)
-
-    let renderer = new THREE.WebGLRenderer()
-    renderer.setSize(canvasWidth, canvasHeight)
-    renderer.localClippingEnabled = true
-    document.body.appendChild(renderer.domElement)
-
-    let cubeObject = createColorCube()
-    cubeObject.applyXYRotation(Math.PI / 12, Math.PI / 6)
-    scene.add(cubeObject.cubeGroup)
-    camera.position.z = 5
-
-    // dragging and rotation
-    let isDragging = false
-    let lastPosition = { y: 0, x: 0 }
-    let lastTouchPosition = { y: 0, x: 0 }
-    function handleStart(x: number, y: number) {
-        isDragging = true
-        lastPosition = { x, y }
-        lastTouchPosition = { x, y }
-    }
-
-    function handleMove(x: number, y: number) {
-        if (isDragging) {
-            cubeObject.applyXYRotation((y - lastPosition.y) * 0.006, (x - lastPosition.x) * 0.006)
-        }
-        lastPosition = { x, y }
-    }
-
-    function handleEnd() {
-        isDragging = false
-    }
-
-    let { documentElement } = document
-
-    documentElement.addEventListener("mousedown", (ev) => {
-        handleStart(ev.clientX, ev.clientY)
-    })
-    documentElement.addEventListener("touchstart", (ev) => {
-        ev.preventDefault()
-        ev.stopImmediatePropagation()
-        let x = ev.touches[0].clientX
-        let y = ev.touches[0].clientY
-        handleStart(x, y)
-    })
-    documentElement.addEventListener("mousemove", (ev) => {
-        handleMove(ev.clientX, ev.clientY)
-    })
-    documentElement.addEventListener("touchmove", (ev) => {
-        let x = ev.touches[0].clientX
-        let y = ev.touches[0].clientY
-        handleMove(x, y)
-    })
-    document.addEventListener("mouseup", handleEnd)
-    document.addEventListener("touchend", handleEnd)
-    document.addEventListener("touchcancel", handleEnd)
-
-    // render cube
-    let render = () => {
-        cubeObject.setCuttingDirection(...corner)
-        cubeObject.setCuttingLevel(level)
-        renderer.render(scene, camera)
-        level = clamp(level + clamp(levelGoal - level, -0.03, 0.03), -1, 1)
-        requestAnimationFrame(render)
-    }
-    render()
-
-    /* wheel */
-    document.addEventListener(
-        "wheel",
-        (ev) => {
-            notificationOverlay.style.display = "none"
-            ev.preventDefault()
-            levelGoal = clamp(level + clamp(-ev.deltaY * 0.002, -0.166, 0.166), -1, 1)
-            setCorner(currentCorner)
-        },
-        true,
-    )
+  stats.begin()
+  renderer.render(scene, camera)
+  stats.end()
 }
