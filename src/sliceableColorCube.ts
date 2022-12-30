@@ -45,9 +45,9 @@ function createFiller() {
   let filler = new three.Group()
 
   let line = new three.Line3()
-  let sphereArray: three.Mesh[] = []
+  let sphereArray: three.Mesh<three.SphereGeometry, three.MeshBasicMaterial>[] = []
   let polygon = Array.from({ length: 7 }, () => {
-    let s = new three.SphereGeometry(0.02)
+    let s = new three.SphereGeometry(0.06)
     let ma = new three.MeshBasicMaterial({ color: "blue" })
     let me = new three.Mesh(s, ma)
     sphereArray.push(me)
@@ -55,17 +55,9 @@ function createFiller() {
     return me.position
   })
 
-  let fillerMesh = new three.Mesh(
-    new three.PolyhedronBufferGeometry(
-      ([] as number[]).concat(...polygon.map((x) => x.toArray())),
-      [0, 1, 2, 0, 1, 3],
-      0.1,
-    ),
-    new three.MeshBasicMaterial({ vertexColors: true, side: three.DoubleSide }),
-  )
-
   const update = (boxMatrix: three.Matrix4, plane: three.Plane) => {
     let degree = 0
+    let inverseBoxMatrix = boxMatrix.clone().invert()
     unitBoxEdgeVertices.forEach(([a, b], k) => {
       line.start.copy(a).multiplyScalar(0.5)
       line.end.copy(b).multiplyScalar(0.5)
@@ -73,6 +65,8 @@ function createFiller() {
       let intersection = plane.intersectLine(line, polygon[degree])
       if (intersection !== null) {
         sphereArray[degree].visible = true
+        let position = intersection.clone().applyMatrix4(inverseBoxMatrix)
+        sphereArray[degree].material.color = colorFromPosition(position)
         degree++
       }
     })
@@ -80,13 +74,14 @@ function createFiller() {
     for (let k = degree; k < 7; k++) {
       sphereArray[k].visible = false
     }
-
-    let positionArray: number[] = []
-    let colorArray: number[] = [0xff0000, 0xff0000, 0xff0000, 0xff0000, 0xff0000, 0xff0000]
-
-    fillerMesh.geometry.setAttribute("position", new three.Float32BufferAttribute(positionArray, 3))
-    fillerMesh.geometry.setAttribute("color", new three.Float32BufferAttribute(colorArray, 3))
   }
 
   return { filler, update }
+}
+
+const halfForward = new three.Vector3(0.5, 0.5, 0.5)
+
+function colorFromPosition(position: three.Vector3) {
+  let [x, y, z] = position.clone().add(halfForward).toArray()
+  return new three.Color(z, 1 - x, y)
 }
