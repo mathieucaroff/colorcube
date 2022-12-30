@@ -1,3 +1,4 @@
+import { PolyhedronBufferGeometry } from "three"
 import { three } from "./alias"
 import { createColorCube } from "./colorCube"
 
@@ -54,6 +55,16 @@ function createFiller() {
     filler.add(me)
     return me.position
   })
+  let colorArray = Array.from({ length: 21 }, () => 0.5)
+  let colorBuffer = new three.Float32BufferAttribute(colorArray, 3)
+  let polyGeometry = new PolyhedronBufferGeometry([], [])
+  polyGeometry.setAttribute("color", colorBuffer)
+  filler.add(
+    new three.Mesh(
+      polyGeometry,
+      new three.MeshBasicMaterial({ vertexColors: true, side: three.DoubleSide }),
+    ),
+  )
 
   const update = (boxMatrix: three.Matrix4, plane: three.Plane) => {
     let degree = 0
@@ -66,7 +77,14 @@ function createFiller() {
       if (intersection !== null) {
         sphereArray[degree].visible = true
         let position = intersection.clone().applyMatrix4(inverseBoxMatrix)
-        sphereArray[degree].material.color = colorFromPosition(position)
+        let color = colorFromPosition(position)
+        sphereArray[degree].material.color = color
+        colorArray[3 * degree] = color.r
+        colorArray[3 * degree + 1] = color.g
+        colorArray[3 * degree + 2] = color.b
+        colorBuffer.set(colorArray)
+        colorBuffer.needsUpdate = true
+        polyGeometry.setAttribute("color", colorBuffer)
         degree++
       }
     })
@@ -74,6 +92,7 @@ function createFiller() {
     for (let k = degree; k < 7; k++) {
       sphereArray[k].visible = false
     }
+    polyGeometry.setFromPoints(polygon.slice(0, degree))
   }
 
   return { filler, update }
