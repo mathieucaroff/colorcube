@@ -4,7 +4,9 @@ import { create } from "./lib/create"
 import { githubCornerHTML } from "./lib/githubCorner"
 import { createSliceableColorCube } from "./sliceableColorCube"
 import { Color } from "three"
-import { createUserRotatable } from "./userRotatable"
+import { setupUserRotation, UserRotableOnRotateParam } from "./input/userRotation"
+import { setupUserScrollLevel } from "./input/userScrollLevel"
+import { clamp } from "./utils/clamp"
 
 function main() {
   let githubCornerDiv = create("div", { innerHTML: githubCornerHTML(packageJson.repository) })
@@ -36,10 +38,38 @@ function main() {
   }
   window.addEventListener("resize", handleResize)
 
+  const handleUserRotate = (param: UserRotableOnRotateParam) => {
+    let { rotationMatrix, buttons } = param
+    console.log("buttons", buttons)
+    if (buttons & 1) {
+      cube.applyMatrix4(rotationMatrix)
+    }
+    if (buttons & 4) {
+      plane.applyMatrix4(rotationMatrix)
+    }
+    render()
+  }
+
+  let targetLevel = 0
+  const smoothLevelChange = () => {
+    let { constant } = plane
+    if (constant !== targetLevel) {
+      plane.constant = clamp(targetLevel, constant - 0.01, constant + 0.01)
+      render()
+      requestAnimationFrame(smoothLevelChange)
+    }
+  }
+
+  const handleLevelChange = (level: number) => {
+    targetLevel = level
+    smoothLevelChange()
+  }
+
   // getting the color cube
-  let rotatable = createUserRotatable({ onRotate: render })
-  rotatable.add(createSliceableColorCube({}))
-  scene.add(rotatable)
+  let { cube, plane } = createSliceableColorCube({})
+  setupUserRotation({ onRotate: handleUserRotate })
+  setupUserScrollLevel({ min: -1, max: 1, onLevelChange: handleLevelChange })
+  scene.add(cube)
 
   handleResize()
 }
