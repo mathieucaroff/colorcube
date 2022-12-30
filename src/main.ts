@@ -40,13 +40,15 @@ function main() {
 
   const handleUserRotate = (param: UserRotableOnRotateParam) => {
     let { rotationMatrix, buttons } = param
-    console.log("buttons", buttons)
-    if (buttons & 1) {
+    let leftClick = buttons & 1
+    let middleClick = (buttons & 4) >> 2
+    if (leftClick) {
       cube.applyMatrix4(rotationMatrix)
     }
-    if (buttons & 4) {
+    if (leftClick ^ middleClick) {
       plane.applyMatrix4(rotationMatrix)
     }
+    filler.update(cube.matrixWorld, plane)
     render()
   }
 
@@ -55,6 +57,7 @@ function main() {
     let { constant } = plane
     if (constant !== targetLevel) {
       plane.constant = clamp(targetLevel, constant - 0.01, constant + 0.01)
+      filler.update(cube.matrixWorld, plane)
       render()
       requestAnimationFrame(smoothLevelChange)
     }
@@ -66,10 +69,11 @@ function main() {
   }
 
   // getting the color cube
-  let { cube, plane } = createSliceableColorCube({})
+  let { cube, filler, plane } = createSliceableColorCube({})
   setupUserRotation({ onRotate: handleUserRotate })
   setupUserScrollLevel({ min: -1, max: 1, onLevelChange: handleLevelChange })
   scene.add(cube)
+  scene.add(filler.filler)
 
   handleResize()
 }
