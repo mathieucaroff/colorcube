@@ -40,3 +40,8 @@ button {
 .frame {
    border: solid 1px grey;
 }
+
+.lil-gui.autoPlace {
+   left: 5px;
+   top: 5px;
+}

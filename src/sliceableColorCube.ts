@@ -12,7 +12,7 @@ export interface UpdateCubeParam {
 }
 
 export function createSliceableColorCube(param: SliceableColorCubeParam) {
-  let plane = new three.Plane(new three.Vector3(1, 1, 1).normalize())
+  let plane = new three.Plane(new three.Vector3(1, -1, -1).normalize())
 
   let cube = createColorCube({ clippingPlanes: [plane] })
   let { filler, updateFiller } = createCubeFiller()
