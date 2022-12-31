@@ -50,12 +50,24 @@ function createFiller() {
   let filler = new three.Group()
 
   let polygon = Array.from({ length: 7 }, () => new three.Vector3())
-  let colorArray = Array.from({ length: 7 }, () => new three.Color())
+  let colorArray = Array.from({ length: 21 * 5 }, () => 0.5)
+  let colorBuffer = new three.Float32BufferAttribute(colorArray, 3)
   let polyGeometry = new three.BufferGeometry()
-  let polyMaterial = new three.MeshBasicMaterial({ vertexColors: true, side: three.DoubleSide })
-  filler.add(new three.Mesh(polyGeometry, polyMaterial))
+  polyGeometry.setAttribute("color", colorBuffer)
+  polyGeometry.setAttribute(
+    "position",
+    new three.Float32BufferAttribute(
+      ([] as number[]).concat(...polygon.map((x) => x.toArray())),
+      3,
+    ),
+  )
+  filler.add(
+    new three.Mesh(
+      polyGeometry,
+      new three.MeshBasicMaterial({ vertexColors: true, side: three.DoubleSide }),
+    ),
+  )
 
-  // Updating the geometry
   const update = (boxMatrix: three.Matrix4, plane: three.Plane) => {
     // update the eight vertex vectors: reset them then apply the rotation
     Object.entries(s).forEach(([name, vector]) => {
@@ -73,35 +85,17 @@ function createFiller() {
         // compute color from position
         let position = intersection.clone().applyMatrix4(inverseBoxMatrix)
         let [x, y, z] = position.add(halfForward).toArray()
-        colorArray[degree].setRGB(z, 1 - x, y)
+        colorArray[3 * degree] = z // red
+        colorArray[3 * degree + 1] = 1 - x // green
+        colorArray[3 * degree + 2] = y // blue
         degree++
       }
     })
-    setGemometry(polyGeometry, colorArray, polygon.slice(0, degree))
+    colorBuffer.set(colorArray)
+    colorBuffer.needsUpdate = true
+    polyGeometry.setAttribute("color", colorBuffer)
+    polyGeometry.setFromPoints(polygon.slice(0, degree))
   }
 
   return { filler, update }
-}
-
-function setGemometry(
-  geometry: three.BufferGeometry,
-  colorArray: three.Color[],
-  positionArray: three.Vector3[],
-) {
-  let colorList: number[] = []
-  let positionList: three.Vector3[] = []
-  for (let k = 2; k < positionArray.length; k++) {
-    for (let m = 1; m < k; m++) {
-      for (let n = 0; n < m; n++) {
-        positionList.push(positionArray[k], positionArray[m], positionArray[n])
-        colorList.push(
-          ...colorArray[k].toArray(),
-          ...colorArray[m].toArray(),
-          ...colorArray[n].toArray(),
-        )
-      }
-    }
-  }
-  geometry.setAttribute("color", new three.Float32BufferAttribute(colorList, 3))
-  geometry.setFromPoints(positionList)
 }
