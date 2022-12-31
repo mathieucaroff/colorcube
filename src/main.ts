@@ -2,7 +2,7 @@ import * as three from "three"
 import * as packageJson from "../package.json"
 import { create } from "./lib/create"
 import { githubCornerHTML } from "./lib/githubCorner"
-import { createSliceableColorCube } from "./sliceableColorCube"
+import { createSliceableColorCube, UpdateCubeParam } from "./sliceableColorCube"
 import { Color } from "three"
 import { setupUserRotation, UserRotableOnRotateParam } from "./input/userRotation"
 import { setupUserScrollLevel } from "./input/userScrollLevel"
@@ -42,13 +42,17 @@ function main() {
     let { rotationMatrix, buttons } = param
     let leftClick = buttons & 1
     let middleClick = (buttons & 4) >> 2
+    let updateCubeParameter: UpdateCubeParam = {}
     if (leftClick) {
-      cube.applyMatrix4(rotationMatrix)
+      if (middleClick) {
+        updateCubeParameter.planeRotation = rotationMatrix
+      } else {
+        updateCubeParameter.cubeAndPlaneRotation = rotationMatrix
+      }
+    } else if (middleClick) {
+      updateCubeParameter.cubeRotation = rotationMatrix
     }
-    if (leftClick ^ middleClick) {
-      plane.applyMatrix4(rotationMatrix)
-    }
-    updateCube(cube.matrixWorld, plane)
+    updateCube(updateCubeParameter)
     render()
   }
 
@@ -56,8 +60,9 @@ function main() {
   const smoothLevelChange = () => {
     let { constant } = plane
     if (constant !== targetLevel) {
-      plane.constant = clamp(targetLevel, constant - 0.01, constant + 0.01)
-      updateCube(cube.matrixWorld, plane)
+      updateCube({
+        planeConstant: clamp(targetLevel, constant - 0.01, constant + 0.01),
+      })
       render()
       requestAnimationFrame(smoothLevelChange)
     }

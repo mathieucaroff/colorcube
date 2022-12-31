@@ -27,7 +27,7 @@ Object.values(cubeVertexToFaceVertexAndColorMap).forEach(([[u, v, w], color]) =>
 let colorBuffer = [].concat(...faceVertexColorArray)
 
 export interface ColorCubeParam {
-  clippingPlanes: three.Plane[]
+  clippingPlanes?: three.Plane[]
 }
 
 export function createColorCube(param: ColorCubeParam): three.Mesh {
