@@ -48,7 +48,7 @@ function main() {
     if (leftClick ^ middleClick) {
       plane.applyMatrix4(rotationMatrix)
     }
-    filler.update(cube.matrixWorld, plane)
+    updateCube(cube.matrixWorld, plane)
     render()
   }
 
@@ -57,7 +57,7 @@ function main() {
     let { constant } = plane
     if (constant !== targetLevel) {
       plane.constant = clamp(targetLevel, constant - 0.01, constant + 0.01)
-      filler.update(cube.matrixWorld, plane)
+      updateCube(cube.matrixWorld, plane)
       render()
       requestAnimationFrame(smoothLevelChange)
     }
@@ -69,11 +69,11 @@ function main() {
   }
 
   // getting the color cube
-  let { cube, filler, plane } = createSliceableColorCube({})
+  let { cube, filler, plane, update: updateCube } = createSliceableColorCube({})
   setupUserRotation({ onRotate: handleUserRotate })
   setupUserScrollLevel({ min: -1, max: 1, onLevelChange: handleLevelChange })
   scene.add(cube)
-  scene.add(filler.filler)
+  scene.add(filler)
 
   handleResize()
 }
