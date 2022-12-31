@@ -1,4 +1,5 @@
 import { three } from "./alias"
+import { createColorfulPolyhedron } from "./colorfulPolyhedron"
 
 const halfForward = new three.Vector3(0.5, 0.5, 0.5)
 const unitBoxVertices = {
@@ -36,32 +37,26 @@ export function createCubeFiller() {
   // Filler
   let filler = new three.Group()
 
-  let polygon = Array.from({ length: 7 }, () => new three.Vector3())
+  let polygon = Array.from({ length: 6 }, () => new three.Vector3())
   let colorArray = Array.from({ length: 21 * 5 }, () => 0.5)
-  let colorBuffer = new three.Float32BufferAttribute(colorArray, 3)
-  let polyGeometry = new three.BufferGeometry()
-  polyGeometry.setAttribute("color", colorBuffer)
-  polyGeometry.setAttribute(
-    "position",
-    new three.Float32BufferAttribute(
-      ([] as number[]).concat(...polygon.map((x) => x.toArray())),
-      3,
-    ),
-  )
-  filler.add(
-    new three.Mesh(
-      polyGeometry,
-      new three.MeshBasicMaterial({ vertexColors: true, side: three.DoubleSide }),
-    ),
-  )
 
-  const updateFiller = (boxMatrix: three.Matrix4, plane: three.Plane) => {
+  // Filler polyhedron
+  let { polyhedron, updatePolyhedron } = createColorfulPolyhedron(6)
+  filler.add(polyhedron)
+  let polyColorArray = Array.from({ length: 6 }, () => new three.Color())
+
+  const updateFiller = (
+    boxMatrix: three.Matrix4,
+    extraRotation: three.Matrix4,
+    plane: three.Plane,
+  ) => {
     // update the eight vertex vectors: reset them then apply the rotation
     Object.entries(s).forEach(([name, vector]) => {
       vector
         .copy((unitBoxVertices as any)[name])
         .multiplyScalar(0.5)
         .applyMatrix4(boxMatrix)
+        .applyMatrix4(extraRotation)
     })
     //
     let degree = 0
@@ -72,9 +67,7 @@ export function createCubeFiller() {
         // compute color from position
         let position = intersection.clone().applyMatrix4(inverseBoxMatrix)
         let [x, y, z] = position.add(halfForward).toArray()
-        colorArray[3 * degree] = z // red
-        colorArray[3 * degree + 1] = 1 - x // green
-        colorArray[3 * degree + 2] = y // blue
+        polyColorArray[degree].setRGB(z, 1 - x, y)
         degree++
       }
     })
@@ -82,16 +75,8 @@ export function createCubeFiller() {
     for (let k = arraySize; k < 5 * arraySize; k++) {
       colorArray[k] = colorArray[k % arraySize]
     }
-
-    let slicedPolygon = polygon.slice(0, degree)
-    let repeatedPolygon = ([] as three.Vector3[]).concat(
-      ...Array.from({ length: 5 }, () => slicedPolygon),
-    )
-
-    colorBuffer.set(colorArray)
-    colorBuffer.needsUpdate = true
-    polyGeometry.setAttribute("color", colorBuffer)
-    polyGeometry.setFromPoints(repeatedPolygon)
+    // update the polyhedron
+    updatePolyhedron(polyColorArray.slice(0, degree), polygon.slice(0, degree))
   }
 
   return { filler, updateFiller }

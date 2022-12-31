@@ -17,31 +17,39 @@ export function createSliceableColorCube(param: SliceableColorCubeParam) {
   let cube = createColorCube({ clippingPlanes: [plane] })
   let { filler, updateFiller } = createCubeFiller()
 
-  let update = (param: UpdateCubeParam) => {
+  let identityMatrix = new three.Matrix4()
+
+  let updateCube = (param: UpdateCubeParam) => {
     let { cubeAndPlaneRotation, cubeRotation, planeRotation, planeConstant } = param
-    let fillerNeedsUpdate = false
+
+    // Apparently, the cube.matrixWorld isn't updated right away when the
+    // rotation matrix is applied, so here we define an extra rotation matrix
+    // which receives the missing rotation and is passed down to updateFiller()
+    let rotation = identityMatrix
+
     if (cubeAndPlaneRotation) {
       if (cubeRotation || planeRotation) {
         throw new Error("bad cube update parameter")
       }
       cube.applyMatrix4(cubeAndPlaneRotation)
       plane.applyMatrix4(cubeAndPlaneRotation)
+      rotation = cubeAndPlaneRotation
     }
     if (cubeRotation) {
       cube.applyMatrix4(cubeRotation)
-      fillerNeedsUpdate = true
+      rotation = cubeRotation
     }
     if (planeRotation) {
       plane.applyMatrix4(planeRotation)
-      fillerNeedsUpdate = true
     }
     if (planeConstant) {
       plane.constant = planeConstant
-      fillerNeedsUpdate = true
     }
 
-    updateFiller(cube.matrixWorld, plane)
+    updateFiller(cube.matrixWorld, rotation, plane)
   }
 
-  return { cube, filler, plane, update }
+  updateCube({})
+
+  return { cube, filler, plane, updateCube }
 }

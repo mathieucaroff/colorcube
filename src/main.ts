@@ -45,12 +45,12 @@ function main() {
     let updateCubeParameter: UpdateCubeParam = {}
     if (leftClick) {
       if (middleClick) {
-        updateCubeParameter.planeRotation = rotationMatrix
+        updateCubeParameter.cubeRotation = rotationMatrix
       } else {
         updateCubeParameter.cubeAndPlaneRotation = rotationMatrix
       }
     } else if (middleClick) {
-      updateCubeParameter.cubeRotation = rotationMatrix
+      updateCubeParameter.planeRotation = rotationMatrix
     }
     updateCube(updateCubeParameter)
     render()
@@ -74,7 +74,7 @@ function main() {
   }
 
   // getting the color cube
-  let { cube, filler, plane, update: updateCube } = createSliceableColorCube({})
+  let { cube, filler, plane, updateCube } = createSliceableColorCube({})
   const helper = new three.PlaneHelper(plane, 1, 0xffffff)
   setupUserRotation({ onRotate: handleUserRotate })
   setupUserScrollLevel({ min: -1, max: 1, onLevelChange: handleLevelChange })

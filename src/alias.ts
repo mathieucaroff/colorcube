@@ -1,3 +1,4 @@
 import * as three from "three"
+import * as lodash from "lodash"
 
-export { three }
+export { lodash, three }

@@ -13,7 +13,7 @@ export function setupUserScrollLevel(param: UserRotatableParam) {
   let level = clamp(0, min, max)
   const onMouseWheel = (ev: WheelEvent) => {
     ev.preventDefault()
-    level = clamp(level + clamp(-ev.deltaY * 0.002, -0.166, 0.166), min, max)
+    level = clamp(level + clamp(ev.deltaY * 0.002, -0.166, 0.166), min, max)
     onLevelChange(level, {})
   }
 
