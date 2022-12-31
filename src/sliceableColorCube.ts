@@ -91,10 +91,20 @@ function createFiller() {
         degree++
       }
     })
+    let arraySize = 3 * degree
+    for (let k = arraySize; k < 5 * arraySize; k++) {
+      colorArray[k] = colorArray[k % arraySize]
+    }
+
+    let slicedPolygon = polygon.slice(0, degree)
+    let repeatedPolygon = ([] as three.Vector3[]).concat(
+      ...Array.from({ length: 5 }, () => slicedPolygon),
+    )
+
     colorBuffer.set(colorArray)
     colorBuffer.needsUpdate = true
     polyGeometry.setAttribute("color", colorBuffer)
-    polyGeometry.setFromPoints(polygon.slice(0, degree))
+    polyGeometry.setFromPoints(repeatedPolygon)
   }
 
   return { filler, update }

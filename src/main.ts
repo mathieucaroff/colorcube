@@ -70,10 +70,12 @@ function main() {
 
   // getting the color cube
   let { cube, filler, plane, update: updateCube } = createSliceableColorCube({})
+  const helper = new three.PlaneHelper(plane, 1, 0xffffff)
   setupUserRotation({ onRotate: handleUserRotate })
   setupUserScrollLevel({ min: -1, max: 1, onLevelChange: handleLevelChange })
   scene.add(cube)
   scene.add(filler)
+  scene.add(helper)
 
   handleResize()
 }
