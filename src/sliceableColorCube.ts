@@ -1,6 +1,7 @@
 import { three } from "./alias"
 import { createColorCube } from "./colorCube"
 import { createCubeFiller } from "./cubeFiller"
+import { createWireframeCube } from "./wireframeCube"
 
 export interface SliceableColorCubeParam {}
 
@@ -15,6 +16,7 @@ export function createSliceableColorCube(param: SliceableColorCubeParam) {
   let plane = new three.Plane(new three.Vector3(1, -1, -1).normalize())
 
   let cube = createColorCube({ clippingPlanes: [plane] })
+  let { wireframeCube } = createWireframeCube()
   let { filler, updateFiller } = createCubeFiller()
 
   let identityMatrix = new three.Matrix4()
@@ -32,11 +34,13 @@ export function createSliceableColorCube(param: SliceableColorCubeParam) {
         throw new Error("bad cube update parameter")
       }
       cube.applyMatrix4(cubeAndPlaneRotation)
+      wireframeCube.applyMatrix4(cubeAndPlaneRotation)
       plane.applyMatrix4(cubeAndPlaneRotation)
       rotation = cubeAndPlaneRotation
     }
     if (cubeRotation) {
       cube.applyMatrix4(cubeRotation)
+      wireframeCube.applyMatrix4(cubeRotation)
       rotation = cubeRotation
     }
     if (planeRotation) {
@@ -51,5 +55,5 @@ export function createSliceableColorCube(param: SliceableColorCubeParam) {
 
   updateCube({})
 
-  return { cube, filler, plane, updateCube }
+  return { cube, filler, plane, updateCube, wireframeCube }
 }

@@ -86,14 +86,16 @@ function main() {
   }
 
   // getting the color cube
-  let { cube, filler, plane, updateCube } = createSliceableColorCube({})
+  let { cube, filler, plane, wireframeCube, updateCube } = createSliceableColorCube({})
   const helper = new three.PlaneHelper(plane, 1, 0xffffff)
   setupUserRotation({ onRotate: handleUserRotate })
   setupUserScrollLevel({ min: -1, max: 1, onLevelChange: handleLevelChange })
   scene.add(cube)
   scene.add(filler)
+  scene.add(wireframeCube)
   scene.add(helper)
-  helper.visible = false
+  wireframeCube.visible = true
+  helper.visible = true
 
   //
   updateCube({
@@ -112,12 +114,13 @@ function main() {
   gui.add(state, "animateCutDepth")
   gui.add(state, "animateCutAngle")
   gui.add(state, "cubeAutoRotation")
+  gui.add(wireframeCube, "visible").name("showCubeWireframe")
   gui.add(helper, "visible").name("showCuttingPlane")
   gui.onFinishChange(handleValueChange)
 
-  const planeRotationMatrix = new three.Matrix4().makeRotationFromEuler(new three.Euler(0, -0.003))
+  const planeRotationMatrix = new three.Matrix4().makeRotationFromEuler(new three.Euler(0, -0.0005))
   const fastRotationMatrix = new three.Matrix4().makeRotationFromEuler(new three.Euler(0, -0.009))
-  const cubeRotationMatrix = new three.Matrix4().makeRotationFromEuler(new three.Euler(0, 0.003))
+  const cubeRotationMatrix = new three.Matrix4().makeRotationFromEuler(new three.Euler(0, 0.0015))
   const cameraDirection = new three.Vector3()
   const auto = () => {
     let needsRender = false
