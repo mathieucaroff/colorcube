@@ -37,7 +37,6 @@ export function createColorCube(param: ColorCubeParam): three.Mesh {
   let cubeMaterial = new three.MeshBasicMaterial({
     vertexColors: true,
     clippingPlanes,
-    side: three.DoubleSide,
   })
 
   return new three.Mesh(cubeGeometry, cubeMaterial)

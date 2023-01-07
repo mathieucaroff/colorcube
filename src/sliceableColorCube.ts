@@ -16,7 +16,7 @@ export function createSliceableColorCube(param: SliceableColorCubeParam) {
   let plane = new three.Plane(new three.Vector3(1, -1, -1).normalize())
 
   let cube = createColorCube({ clippingPlanes: [plane] })
-  let { wireframeCube } = createWireframeCube()
+  let { wireframeCube } = createWireframeCube({ size: 1.001 })
   let { filler, updateFiller } = createCubeFiller()
 
   let identityMatrix = new three.Matrix4()

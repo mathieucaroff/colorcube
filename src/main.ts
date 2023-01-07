@@ -109,15 +109,15 @@ function main() {
   // getting the color cube
   let { cube, filler, plane, wireframeCube, updateCube } = createSliceableColorCube({})
   plane.constant = state.targetLevel
-  const helper = new three.PlaneHelper(plane, 1, 0xffffff)
+  const wireframePlane = new three.PlaneHelper(plane, 1, 0xffffff)
   setupUserRotation({ onRotate: handleUserRotate })
   setupUserScrollLevel({ min: -1, max: 1, onLevelChange: handleLevelChange })
   scene.add(cube)
   scene.add(filler)
   scene.add(wireframeCube)
-  scene.add(helper)
+  scene.add(wireframePlane)
   wireframeCube.visible = true
-  helper.visible = true
+  wireframePlane.visible = true
 
   //
   updateCube({
@@ -126,7 +126,6 @@ function main() {
 
   let start = Date.now()
   const handleValueChange = () => {
-    console.log("onFinishChange")
     smoothLevelChange()
     auto(true)
     start = Date.now()
@@ -139,7 +138,7 @@ function main() {
   gui.add(state, "animateCutAngle")
   gui.add(state, "cubeAutoRotation")
   gui.add(wireframeCube, "visible").name("showCubeWireframe")
-  gui.add(helper, "visible").name("showCuttingPlane")
+  gui.add(wireframePlane, "visible").name("showCuttingPlane")
   gui.onFinishChange(handleValueChange)
   gui.onChange(() => {
     plane.constant = state.targetLevel
