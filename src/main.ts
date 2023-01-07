@@ -9,16 +9,32 @@ import { setupUserScrollLevel } from "./input/userScrollLevel"
 import { clamp } from "./utils/clamp"
 import GUI from "lil-gui"
 
+interface MainState {
+  interactionMode: "both" | "cube" | "plane"
+  targetLevel: number
+  animateCutDepth: boolean
+  animateCutAngle: boolean
+  cubeAutoRotation: boolean
+}
+
 function main() {
   let githubCornerDiv = create("div", { innerHTML: githubCornerHTML(packageJson.repository) })
   document.body.appendChild(githubCornerDiv)
 
+  let a = new URLSearchParams(location.search)
+  let defaultAnimateValue = a.get("animate")
+  let defaultAnimate = !!+defaultAnimateValue!
+  if (defaultAnimateValue === "" || defaultAnimateValue === null) {
+    defaultAnimate = true
+  }
+
   // three.js setup
-  let state = {
-    targetLevel: 0,
-    animateCutDepth: true,
-    animateCutAngle: true,
-    cubeAutoRotation: true,
+  let state: MainState = {
+    interactionMode: "both",
+    targetLevel: 0.3,
+    animateCutDepth: defaultAnimate,
+    animateCutAngle: defaultAnimate,
+    cubeAutoRotation: defaultAnimate,
   }
 
   let scene = new three.Scene()
@@ -50,17 +66,22 @@ function main() {
     let { rotationMatrix, buttons } = param
     let leftClick = buttons & 1
     let middleClick = (buttons & 4) >> 2
-    let updateCubeParameter: UpdateCubeParam = {}
-    if (leftClick) {
-      if (middleClick) {
-        updateCubeParameter.cubeRotation = rotationMatrix
-      } else {
-        updateCubeParameter.cubeAndPlaneRotation = rotationMatrix
+    let update: UpdateCubeParam = {}
+    if (!middleClick) {
+      if (state.interactionMode === "both") {
+        update.cubeRotation = rotationMatrix
+        update.planeRotation = rotationMatrix
+      } else if (state.interactionMode === "cube") {
+        update.cubeRotation = rotationMatrix
+      } else if (state.interactionMode === "plane") {
+        update.planeRotation = rotationMatrix
       }
+    } else if (leftClick) {
+      update.cubeRotation = rotationMatrix
     } else if (middleClick) {
-      updateCubeParameter.planeRotation = rotationMatrix
+      update.planeRotation = rotationMatrix
     }
-    updateCube(updateCubeParameter)
+    updateCube(update)
     render()
   }
 
@@ -87,6 +108,7 @@ function main() {
 
   // getting the color cube
   let { cube, filler, plane, wireframeCube, updateCube } = createSliceableColorCube({})
+  plane.constant = state.targetLevel
   const helper = new three.PlaneHelper(plane, 1, 0xffffff)
   setupUserRotation({ onRotate: handleUserRotate })
   setupUserScrollLevel({ min: -1, max: 1, onLevelChange: handleLevelChange })
@@ -104,26 +126,30 @@ function main() {
 
   let start = Date.now()
   const handleValueChange = () => {
+    console.log("onFinishChange")
     smoothLevelChange()
-    auto()
+    auto(true)
     start = Date.now()
   }
 
   const gui = new GUI()
-  gui.add(plane, "constant", -1, 1).name("cutLevel")
+  gui.add(state, "interactionMode", ["both", "cube", "plane"])
+  gui.add(state, "targetLevel", -1, 1).name("cutLevel")
   gui.add(state, "animateCutDepth")
   gui.add(state, "animateCutAngle")
   gui.add(state, "cubeAutoRotation")
   gui.add(wireframeCube, "visible").name("showCubeWireframe")
   gui.add(helper, "visible").name("showCuttingPlane")
   gui.onFinishChange(handleValueChange)
+  gui.onChange(() => {
+    plane.constant = state.targetLevel
+  })
 
   const planeRotationMatrix = new three.Matrix4().makeRotationFromEuler(new three.Euler(0, -0.0005))
   const fastRotationMatrix = new three.Matrix4().makeRotationFromEuler(new three.Euler(0, -0.009))
   const cubeRotationMatrix = new three.Matrix4().makeRotationFromEuler(new three.Euler(0, 0.0015))
   const cameraDirection = new three.Vector3()
-  const auto = () => {
-    let needsRender = false
+  const auto = (needsRender = false) => {
     if (state.animateCutDepth) {
       updateCube({
         planeConstant: Math.sin(Date.now() / 1000) * 0.8 + 0.1,
@@ -147,7 +173,7 @@ function main() {
       render()
     }
 
-    requestAnimationFrame(auto)
+    requestAnimationFrame(() => auto())
   }
 
   handleResize()
