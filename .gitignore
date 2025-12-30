@@ -3,8 +3,8 @@
 !/src/
 
 !/.gitignore
+!/bun.lock
 !/package.json
 !/README.md
 !/tailwind.config.js
 !/tsconfig.json
-!/yarn.lock
